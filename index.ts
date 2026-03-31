@@ -121,6 +121,44 @@ app.all(
 );
 
 /**
+ * @note register endpoint - validates new GrowID credentials and registers
+ * @param req - express request with growId, password, email, _token
+ * @param res - express response with token
+ */
+app.all(
+  '/player/growid/register/validate',
+  async (req: Request, res: Response) => {
+    try {
+      const formData = req.body as Record<string, string>;
+      const _token = formData._token;
+      const growId = formData.growId;
+      const password = formData.password;
+      const email = formData.email;
+
+      const token = Buffer.from(
+        `_token=${_token}&growId=${growId}&password=${password}&email=${email}&reg=1`,
+      ).toString('base64');
+
+      res.send(
+        JSON.stringify({
+          status: 'success',
+          message: 'Account Created Validated.',
+          token,
+          url: '',
+          accountType: 'growtopia',
+        }),
+      );
+    } catch (error) {
+      console.log(`[ERROR]: ${error}`);
+      res.status(500).json({
+        status: 'error',
+        message: 'Internal Server Error',
+      });
+    }
+  },
+);
+
+/**
  * @note first checktoken endpoint - redirects to validate endpoint
  * @param req - express request with refreshToken and clientData
  * @param res - express response with updated token
@@ -208,12 +246,7 @@ app.all(
         'utf-8',
       );
 
-      // @note remove &reg=0/1 from decodedRefreshToken if available
-      if (decodedRefreshToken.includes('&reg=0')) {
-        decodedRefreshToken = decodedRefreshToken.replace('&reg=0', '');
-      } else if (decodedRefreshToken.includes('&reg=1')) {
-        decodedRefreshToken = decodedRefreshToken.replace('&reg=1', '');
-      }
+      // (intentionally omitted removal of reg=0 and reg=1)
 
       const token = Buffer.from(
         decodedRefreshToken.replace(
